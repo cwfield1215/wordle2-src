@@ -178,7 +178,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void delete(View view) {
-
         curLetter = guessedLetters[currentRow][currentCol].getText().toString();
         if (curLetter.equalsIgnoreCase("")) {
             if (currentCol > 0) {
