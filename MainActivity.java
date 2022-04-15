@@ -185,7 +185,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         guessedLetters[currentRow][currentCol].setText("");
-
     }
 
 
