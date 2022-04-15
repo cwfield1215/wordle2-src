@@ -178,6 +178,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void delete(View view) {
+
         curLetter = guessedLetters[currentRow][currentCol].getText().toString();
         if (curLetter.equalsIgnoreCase("")) {
             if (currentCol > 0) {
@@ -185,6 +186,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         guessedLetters[currentRow][currentCol].setText("");
+
     }
 
 
@@ -210,16 +212,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         //  Has the user entered a valid word? If not, clear it and get out
-        if (!verbs.contains(userWord)) {
-            outDisplay.setText("The word you entered is invalid.");
-            for (int l = 0; l < 4; l++)  {
-                guessedLetters[currentRow][currentCol].setText("");
-                currentCol -= 1;
-            }
-
-            guessedLetters[currentRow][0].setText("");
-            return;
-        }
+//        if (!verbs.contains(userWord)) {
+//            outDisplay.setText("The word you entered is invalid.");
+//            for (int l = 0; l < 4; l++)  {
+//                guessedLetters[currentRow][currentCol].setText("");
+//                currentCol -= 1;
+//            }
+//
+//            guessedLetters[currentRow][0].setText("");
+//            return;
+//        }
 
         // Has the user guessed the word correctly?
         if (userWord.equals(word)) {
@@ -234,7 +236,7 @@ public class MainActivity extends AppCompatActivity {
         // Check for letters that are correct and in the correct spot and remember which ones.
         for (int i = 0; i < 5; i++) {
             if (userWord.charAt(i) == letters[i]) {
-                greenBoxes[currentRow][i].animate().alpha(1f).rotationXBy(180).setDuration(500);
+                greenBoxes[currentRow][i].animate().alpha(1f).rotationXBy(-180).setDuration(500);
                 grayBoxes[currentRow][i].animate().alpha(0f);
                 //System.out.println("green");
                 outDisplay.setText("");
@@ -248,16 +250,20 @@ public class MainActivity extends AppCompatActivity {
                 for (int j = 0; j < 5; j++) {
                     if (letterState[j] == '-' ) {
                         if (userWord.charAt(i) == letters[j]) {
-                            yellowBoxes[currentRow][i].animate().alpha(1f).rotationXBy(180).setDuration(500);
+                            yellowBoxes[currentRow][i].animate().alpha(1f).rotationXBy(-180).setDuration(500);
                             grayBoxes[currentRow][i].animate().alpha(0f);
                             //System.out.println("yellow");
                             outDisplay.setText("");
                             letterState[j] = 'Y';
                             break;
                         }
+                        else{
+                            grayBoxes[currentRow][i].animate().alpha(1f).rotationXBy(-180).setDuration(500);
+                        }
                     }
                 }
             }
+
         }
 
 
