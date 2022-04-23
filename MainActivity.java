@@ -2,6 +2,7 @@ package com.example.wordle2;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -17,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
     ImageView[][] grayBoxes = new ImageView[6][5];
     ImageView[][] yellowBoxes = new ImageView[6][5];
     TextView[][] guessedLetters = new TextView[6][5];
+    ImageView[] keyboard = new ImageView[26];
 
     int currentRow = 0;
     //  currentCol is where the next letter is going to go!
@@ -24,54 +26,27 @@ public class MainActivity extends AppCompatActivity {
 
     String userWord = "";
     long startTime;
-    int letterInd;
-    int numInd;
-    int countWord = 0;
-    int countGuess = 0;
-    int getOut = 0;
-    int[] abc=new int[26];
-    int a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, a2, b2, c2, d2, e2, f2, g2, h2, i2, j2, k2, l2, m2, n2, o2, p2, q2, r2, s2, t2, u2, v2, w2, x2, y2, z2;
+//    int letterInd;
+//    int numInd;
+//    int countWord = 0;
+//    int countGuess = 0;
+//    int getOut = 0;
+//    int[] abc=new int[26];
+//    int a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, a2, b2, c2, d2, e2, f2, g2, h2, i2, j2, k2, l2, m2, n2, o2, p2, q2, r2, s2, t2, u2, v2, w2, x2, y2, z2;
 
     char[] letters = new char[5];
 
     ArrayList<String> verbs = getWordBank();
 
-    //ArrayList<String> verbsUpper = new ArrayList<>();
-    ImageView kimage;
-    ImageView kimage2;
-    ImageView kimage3;
-    ImageView kimage4;
-    ImageView kimage5;
-    ImageView kimage6;
-    ImageView kimage7;
-    ImageView kimage8;
-    ImageView kimage9;
-    ImageView kimage10;
-    ImageView kimage11;
-    ImageView kimage12;
-    ImageView kimage13;
-    ImageView kimage14;
-    ImageView kimage15;
-    ImageView kimage16;
-    ImageView kimage17;
-    ImageView kimage18;
-    ImageView kimage19;
-    ImageView kimage20;
-    ImageView kimage21;
-    ImageView kimage22;
-    ImageView kimage23;
-    ImageView kimage24;
-    ImageView kimage25;
-    ImageView kimage26;
-    ImageView kimage27;
-    ImageView kimage28;
+    ImageView enter;
+    ImageView backspace;
     TextView textview2;
     TextView timer;
 
     String curLetter;
 
     String word;
-    char word2;
+    //    char word2;
     TextView outDisplay;
     TextView winDisplay;
 
@@ -111,37 +86,19 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        kimage = findViewById(R.id.keyQ);
-        kimage2 = findViewById(R.id.keyW);
-        kimage3 = findViewById(R.id.keyE);
-        kimage4 = findViewById(R.id.keyR);
-        kimage5 = findViewById(R.id.keyT);
-        kimage6 = findViewById(R.id.keyY);
-        kimage7 = findViewById(R.id.keyU);
-        kimage8 = findViewById(R.id.keyI);
-        kimage9 = findViewById(R.id.keyO);
-        kimage10 = findViewById(R.id.keyP);
-        kimage11 = findViewById(R.id.keyA);
-        kimage12 = findViewById(R.id.keyS);
-        kimage13 = findViewById(R.id.keyD);
-        kimage14 = findViewById(R.id.keyF);
-        kimage15 = findViewById(R.id.keyG);
-        kimage16 = findViewById(R.id.keyH);
-        kimage17 = findViewById(R.id.keyJ);
-        kimage18 = findViewById(R.id.keyK);
-        kimage19 = findViewById(R.id.keyL);
-        kimage20 = findViewById(R.id.enter);
-        kimage21 = findViewById(R.id.keyZ);
-        kimage22 = findViewById(R.id.keyX);
-        kimage23 = findViewById(R.id.keyC);
-        kimage24 = findViewById(R.id.keyV);
-        kimage25 = findViewById(R.id.keyB);
-        kimage26 = findViewById(R.id.keyN);
-        kimage27 = findViewById(R.id.keyM);
-        kimage28 = findViewById(R.id.backspace);
+        String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        for (int i = 0; i < 26; i++) {
+            name = "key" + String.valueOf(alphabet.charAt(i));
+            System.out.println("Binding keyboard for " + name);
+            resID = getResources().getIdentifier(name, "id", getPackageName());
+            keyboard[i] = findViewById(resID);
+        }
+
+        enter = findViewById(R.id.enter);
+        backspace = findViewById(R.id.backspace);
         winDisplay = findViewById(R.id.winText);
         textview2 = findViewById(R.id.textView51);
-        timer= findViewById(R.id.timer);
+        timer = findViewById(R.id.timer);
 
         //  Choose a random word from the list of words
         int wordInd = (int) ((Math.round(Math.random() * verbs.size())));
@@ -157,16 +114,16 @@ public class MainActivity extends AppCompatActivity {
         System.out.println(word);
 
         // Uppercase the entire word list
-        for (int q = 0; q < verbs.size(); q++){
+        for (int q = 0; q < verbs.size(); q++) {
             String test = verbs.get(q).toUpperCase(Locale.ROOT);
-            verbs.set(q,test);
+            verbs.set(q, test);
         }
     }
 
 
     public void keyPressed(View view) {
-        if (startTime==0){
-            startTime=System.currentTimeMillis();
+        if (startTime == 0) {
+            startTime = System.currentTimeMillis();
             timer.setText("Timer started...");
         }
 
@@ -205,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
         char letterState[] = {'-', '-', '-', '-', '-'};
 
         // Has the user entered 5 letters?
-        if (currentCol!=4) {
+        if (currentCol != 4) {
             System.out.println("word short");
             outDisplay.setText("Word is too short");
             return;
@@ -220,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
         //  Has the user entered a valid word? If not, clear it and get out
         if (!verbs.contains(userWord)) {
             outDisplay.setText("The word you entered is invalid.");
-            for (int l = 0; l < 4; l++)  {
+            for (int l = 0; l < 4; l++) {
                 guessedLetters[currentRow][currentCol].setText("");
                 currentCol -= 1;
             }
@@ -237,8 +194,8 @@ public class MainActivity extends AppCompatActivity {
                 winDisplay.setText(word);
                 outDisplay.setText("");
             }
-            long endTime=System.currentTimeMillis();
-            timer.setText(millisecondsToTime(endTime-startTime));
+            long endTime = System.currentTimeMillis();
+            timer.setText(millisecondsToTime(endTime - startTime));
 
             return;
         }
@@ -246,22 +203,25 @@ public class MainActivity extends AppCompatActivity {
         // Check for letters that are correct and in the correct spot and remember which ones.
         for (int i = 0; i < 5; i++) {
             if (userWord.charAt(i) == letters[i]) {
+                // Flip the tiles on the board
                 greenBoxes[currentRow][i].animate().alpha(1f).rotationXBy(-180).setDuration(500);
                 grayBoxes[currentRow][i].animate().alpha(0f);
                 //System.out.println("green");
                 outDisplay.setText("");
                 letterState[i] = 'G';
+
+                setKeyboardColor(userWord.charAt(i), Color.GREEN);
             }
         }
 
         // Check for letters that are correct but not in the right spot.
         // 'i' loops over the letters the user has entered, skipping anything that's ALREADY Green
         for (int i = 0; i < 5; i++) {
-            if (letterState[i]  != 'G') {
+            if (letterState[i] != 'G') {
                 // 'j' loops over the letters in the word to be guessed, skipping over
                 // anything that's been used in a match already
                 for (int j = 0; j < 5; j++) {
-                    if (letterState[j] == '-' ) {
+                    if (letterState[j] == '-') {
                         if (userWord.charAt(i) == letters[j]) {
                             //  Flip any correct letter in wrong place to YELLOW
                             yellowBoxes[currentRow][i].animate().alpha(1f).rotationXBy(-180).setDuration(500);
@@ -269,11 +229,12 @@ public class MainActivity extends AppCompatActivity {
                             //System.out.println("yellow");
                             outDisplay.setText("");
                             letterState[j] = 'Y';
+                            setKeyboardColor(userWord.charAt(i), Color.YELLOW);
                             break;
-                        }
-                        else{
+                        } else {
                             //  Flip completely incorrect letters from Gray to Gray
                             grayBoxes[currentRow][i].animate().alpha(1f).rotationXBy(-180).setDuration(500);
+                            setKeyboardColor(userWord.charAt(i), Color.BLACK);
                         }
                     }
                 }
@@ -286,26 +247,54 @@ public class MainActivity extends AppCompatActivity {
 
         //  If the user has used all their guesses and NOT gotten the word,
         //  insult them.
-        if(currentRow>=6 && !userWord.equalsIgnoreCase(word)){
+        if (currentRow >= 6 && !userWord.equalsIgnoreCase(word)) {
             System.out.println(word);
-            outDisplay.setText("Dumbass, the word was "+word);
+            outDisplay.setText("Dumbass, the word was " + word);
             timer.setText("What are you looking for you didn't finish fool");
         }
     }
 
-    private String millisecondsToTime(long milliseconds){
-        long minutes=(milliseconds/1000)/60;
-        long seconds=(milliseconds/1000)%60;
-        String secondsStr=Long.toString(seconds);
+    private String millisecondsToTime(long milliseconds) {
+        long minutes = (milliseconds / 1000) / 60;
+        long seconds = (milliseconds / 1000) % 60;
+        String secondsStr = Long.toString(seconds);
         String secs;
-        if(secondsStr.length()>=2){
-            secs=secondsStr.substring(0,2);
+        if (secondsStr.length() >= 2) {
+            secs = secondsStr.substring(0, 2);
+        } else {
+            secs = "0" + secondsStr;
         }
-        else{
-            secs="0" + secondsStr;
-        }
-        return minutes+": "+secs;
+        return minutes + ": " + secs;
     }
+
+    /*
+     *  Set the keys to right color, but never flip green to yellow.
+     */
+    private void setKeyboardColor(char key, int color) {
+        int resourceID = getResources().getIdentifier("textView" + String.valueOf(key), "id", getPackageName());
+        TextView t = findViewById(resourceID);
+        int currentColor = t.getCurrentTextColor();
+        System.out.println("Key " + String.valueOf(key) + " is currently color " + color);
+
+        switch (color) {
+            case Color.GREEN:
+                t.setTextColor(Color.GREEN);
+                System.out.println("Set key " + String.valueOf(key) + " to color GREEN = " + color);
+                break;
+            case Color.BLACK:
+                if (currentColor != Color.GREEN && currentColor != Color.YELLOW) {
+                    t.setTextColor(Color.BLACK);
+                    System.out.println("Set key " + String.valueOf(key) + " to color BLACK = " + color);
+                }
+                break;
+            default:
+                if (currentColor != Color.GREEN) {
+                    t.setTextColor(Color.YELLOW);
+                    System.out.println("Set key " + String.valueOf(key) + " to color YELLOW = " + color);
+                }
+        }
+    }
+
 
     ArrayList<String> getWordBank() {
         ArrayList<String> list = new ArrayList<>(Arrays.asList(
