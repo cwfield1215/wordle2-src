@@ -20,33 +20,25 @@ public class MainActivity extends AppCompatActivity {
     TextView[][] guessedLetters = new TextView[6][5];
     ImageView[] keyboard = new ImageView[26];
 
-    int currentRow = 0;
-    //  currentCol is where the next letter is going to go!
-    int currentCol = 0;
-
-    String userWord = "";
-    long startTime;
-//    int letterInd;
-//    int numInd;
-//    int countWord = 0;
-//    int countGuess = 0;
-//    int getOut = 0;
-//    int[] abc=new int[26];
-//    int a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, a2, b2, c2, d2, e2, f2, g2, h2, i2, j2, k2, l2, m2, n2, o2, p2, q2, r2, s2, t2, u2, v2, w2, x2, y2, z2;
-
-    char[] letters = new char[5];
-
-    ArrayList<String> verbs = getWordBank();
-
     ImageView enter;
     ImageView backspace;
     TextView textview2;
     TextView timer;
 
+    //  currentRow is the row the user is working in
+    int currentRow = 0;
+    //  currentCol is where the next letter is going to go!
+    int currentCol = 0;
+
+    long startTime;
+
+    ArrayList<String> verbs = getWordBank();
+
+    char[] letters = new char[5];
     String curLetter;
 
+    String userWord = "";
     String word;
-    //    char word2;
     TextView outDisplay;
     TextView winDisplay;
 
@@ -120,7 +112,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
+    /*
+     *   Called whenever a letter is pressed.
+     */
     public void keyPressed(View view) {
         if (startTime == 0) {
             startTime = System.currentTimeMillis();
@@ -141,6 +135,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /*
+     *  Called whenever the delete key is pressed.
+     */
     public void delete(View view) {
 
         curLetter = guessedLetters[currentRow][currentCol].getText().toString();
@@ -152,7 +149,9 @@ public class MainActivity extends AppCompatActivity {
         guessedLetters[currentRow][currentCol].setText("");
     }
 
-
+    /*
+     *  Called whenever the enter key is pressed. Lots to do here!
+     */
     public void enter(View view) {
         int counter = 0;
         char holder = 0;
@@ -254,6 +253,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /*
+     *  Format milliseconds as a readable time.
+     */
     private String millisecondsToTime(long milliseconds) {
         long minutes = (milliseconds / 1000) / 60;
         long seconds = (milliseconds / 1000) % 60;
