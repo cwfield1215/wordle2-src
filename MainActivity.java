@@ -4,14 +4,21 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
     ImageView[][] greenBoxes = new ImageView[6][5];
@@ -19,11 +26,13 @@ public class MainActivity extends AppCompatActivity {
     ImageView[][] yellowBoxes = new ImageView[6][5];
     TextView[][] guessedLetters = new TextView[6][5];
     ImageView[] keyboard = new ImageView[26];
-
+    Button reset;
     ImageView enter;
     ImageView backspace;
+    ImageView space;
     TextView textview2;
     TextView timer;
+    TextView enter2;
 
     //  currentRow is the row the user is working in
     int currentRow = 0;
@@ -39,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
     String userWord = "";
     String word;
+    String newWord;
     TextView outDisplay;
     TextView winDisplay;
 
@@ -48,6 +58,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        reset = findViewById(R.id.resetButton);
+        reset.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                finish();
+            }
+        });
+        reset.setVisibility(View.INVISIBLE);
         String name;
         int resID;
         outDisplay = findViewById(R.id.output);
@@ -85,9 +103,10 @@ public class MainActivity extends AppCompatActivity {
             resID = getResources().getIdentifier(name, "id", getPackageName());
             keyboard[i] = findViewById(resID);
         }
-
+        enter2=findViewById(R.id.textViewEnt);
         enter = findViewById(R.id.enter);
         backspace = findViewById(R.id.backspace);
+        space=findViewById(R.id.space);
         winDisplay = findViewById(R.id.winText);
         textview2 = findViewById(R.id.textView51);
         timer = findViewById(R.id.timer);
@@ -95,6 +114,8 @@ public class MainActivity extends AppCompatActivity {
         //  Choose a random word from the list of words
         int wordInd = (int) ((Math.round(Math.random() * verbs.size())));
         word = (verbs.get(wordInd)).toUpperCase();
+
+
 
         //  FORCE THE WORD TO SOMETHING FOR DEBUGGING!!!!
         //word="ERROR";
@@ -110,6 +131,9 @@ public class MainActivity extends AppCompatActivity {
             String test = verbs.get(q).toUpperCase(Locale.ROOT);
             verbs.set(q, test);
         }
+
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
     }
 
     /*
@@ -192,10 +216,16 @@ public class MainActivity extends AppCompatActivity {
                 grayBoxes[currentRow][i].animate().alpha(0f);
                 winDisplay.setText(word);
                 outDisplay.setText("");
+                reset.setVisibility(View.VISIBLE);
+                //enter2.setText("Reset");
+
             }
             long endTime = System.currentTimeMillis();
-            timer.setText(millisecondsToTime(endTime - startTime));
+            long totalTime = endTime - startTime;
+            int time = Integer.parseInt(String.valueOf(totalTime));
+            timer.setText(millisecondsToTime(totalTime));
 
+            postResults("chrfield", time, currentRow, "solved" );
             return;
         }
 
@@ -249,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
         if (currentRow >= 6 && !userWord.equalsIgnoreCase(word)) {
             System.out.println(word);
             outDisplay.setText("Dumbass, the word was " + word);
-            timer.setText("What are you looking for you didn't finish fool");
+            timer.setText("You suck");
         }
     }
 
@@ -267,6 +297,41 @@ public class MainActivity extends AppCompatActivity {
             secs = "0" + secondsStr;
         }
         return minutes + ": " + secs;
+    }
+
+    public void reset(View view){
+        reset.setVisibility(View.INVISIBLE);
+        timer.setText("Timer starts when you click a button");
+        startTime=0;
+        for (int i=0; i<5; i++){
+            for(int j=0;j<6;j++){
+                guessedLetters[j][i].setText("");
+                greenBoxes[j][i].animate().rotationXBy(180).setDuration(500).alpha(0f);
+                grayBoxes[j][i].animate().rotationXBy(180).setDuration(500).alpha(1f);
+                yellowBoxes[j][i].animate().rotationXBy(180).setDuration(500).alpha(0f);
+                outDisplay.setText("");
+                timer.setText("");
+                winDisplay.setText("");
+
+                for(int t=0;t<26;t++){
+                    char c=(char) ('A'+ t);
+                    setKeyboardColor(c,Color.WHITE);
+                    currentCol=0;
+                    currentRow=0;
+                }
+            }
+
+        }
+
+        int wordInd = (int) ((Math.round(Math.random() * verbs.size())));
+        newWord = (verbs.get(wordInd)).toUpperCase();
+        word=newWord;
+        // letters is all the correct letters in the correct order
+        for (int f = 0; f < 5; f++) {
+            letters[f] = word.charAt(f);
+        }
+        System.out.println(word);
+        System.out.println(letters);
     }
 
     /*
@@ -289,14 +354,55 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println("Set key " + String.valueOf(key) + " to color BLACK = " + color);
                 }
                 break;
+            case Color.WHITE:
+                t.setTextColor(Color.WHITE);
+                break;
             default:
                 if (currentColor != Color.GREEN) {
                     t.setTextColor(Color.YELLOW);
                     System.out.println("Set key " + String.valueOf(key) + " to color YELLOW = " + color);
                 }
         }
+
     }
 
+    /*
+     *   This method will push the results of the game to the Kordle Server to be stored.
+     */
+    public void postResults(String user, int timeMillis, int numTries, String outcome) {
+        try {
+            //URL url = new URL("http://10.0.2.2:8080/result");
+            //URL url = new URL("https://cwfield-kordle.ue.r.appspot.com/result");
+            URL url = new URL("https://kordle-svr-5bu27xjxoq-ue.a.run.app/result");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            String input = "{\"user\": \"" + user + "\"," +
+                    "\"timeMillis\": \"" + timeMillis + "\"," +
+                    "\"numTries\": \"" + numTries + "\"," +
+                    "\"outcome\": \"" + outcome + "\"}";
+            OutputStream os = conn.getOutputStream();
+            os.write(input.getBytes());
+            os.flush();
+            //if (conn.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
+            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                System.out.println("Failed : HTTP");
+            }
+            System.out.println("Return code: " + conn.getResponseCode());
+
+//            BufferedReader br = new BufferedReader(new InputStreamReader(
+//                    (conn.getInputStream())));
+//            String output;
+//            System.out.println("Output from Server .... \n");
+//            while ((output = br.readLine()) != null) {
+//                System.out.println(output);
+//            }
+            conn.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     ArrayList<String> getWordBank() {
         ArrayList<String> list = new ArrayList<>(Arrays.asList(
@@ -367,8 +473,8 @@ public class MainActivity extends AppCompatActivity {
                 "brook", "wrong", "short", "daisy", "chess", "nanny", "dolly", "donor", "slate",
                 "amino", "booth", "duchy", "hobby", "alley", "idiot", "verge", "leigh", "drain", "crane", "scrap", "wagon",
                 "stoke", "abbot", "genre", "costa", "chile", "stack", "mungo", "lever", "dwarf", "witch", "whale", "crest",
-                "chord", "tract", "molla", "badge", "pasta", "joint", "slump", "ditch", "locke",
-                "minus", "venus", "troop", "curry", "blend", "sweep", "porch", "penis", "lager", "flint",
+                "chord", "tract", "badge", "pasta", "joint", "slump", "ditch", "locke",
+                "minus", "venus", "troop", "curry", "blend", "sweep", "porch", "lager", "flint",
                 "scarf", "tonic", "cough", "litre", "fiver", "attic", "creed", "cocoa", "goose", "jelly", "greed",
                 "carer", "pizza", "brake", "meter", "assay", "boxer", "puppy", "berry", "guido", "couch", "mound", "brief",
                 "glare", "inset", "steak", "moran", "hatch", "cider", "apron", "bloom", "sting", "token", "quote",
@@ -383,7 +489,7 @@ public class MainActivity extends AppCompatActivity {
                 "maple", "gorge", "decor", "throw", "stair", "wrath", "bingo", "groin", "scalp", "tempo",
                 "savoy", "loser", "aroma", "ascot", "motto", "basic", "havoc", "aggie", "willy", "blind", "batty", "monte",
                 "yeast", "comic", "scrum", "wharf", "lynch", "ounce", "broom", "click", "snack", "crypt", "spate", "beryl",
-                "pouch", "maize", "liner", "tonne", "vinyl", "flush", "dough", "envoy", "smart", "shark", "farce", "arson",
+                "pouch", "liner", "tonne", "vinyl", "flush", "dough", "envoy", "smart", "shark", "farce", "arson",
                 "turbo", "minor", "broad", "deity", "synod", "alien",
                 "vodka", "resin", "alloy", "shrug", "trait", "grand", "spade", "sweet", "sauna", "voter", "scout",
                 "gemma", "chuck", "franc", "snail", "scorn", "pedal", "shake", "chant", "spear", "demon", "clone", "swell",
@@ -556,7 +662,7 @@ public class MainActivity extends AppCompatActivity {
                 "grubs", "annex", "dizzy", "hasty", "latch", "wasps", "mirth", "baron", "plead", "aloof", "aging", "pixel",
                 "bared", "mummy", "hotly", "auger", "buddy", "chaps", "badge", "stark", "fairs", "gully", "mumps", "emery",
                 "filly", "ovens", "drone", "gauze", "idiot", "fussy", "annoy", "shank", "gouge", "bleed", "elves", "roped",
-                "unfit", "baggy", "mower", "scant", "grabs", "fleas", "lousy", "album", "sawed", "cooky", "murky", "infer",
+                "unfit", "baggy", "mower", "scant", "grabs", "fleas", "lousy", "album", "sawed", "murky", "infer",
                 "burly", "waged", "dingy", "brine", "kneel", "creak", "vanes", "smoky", "spurt", "combs", "easel", "laces",
                 "humps", "rumor", "aroma", "horde", "swiss", "leapt", "opium", "slime", "afire", "pansy", "mares", "soaps",
                 "husks", "snips", "hazel", "lined", "cafes", "naive", "wraps", "sized", "piers", "beset", "agile", "tongs",
@@ -587,10 +693,10 @@ public class MainActivity extends AppCompatActivity {
                 "tilts", "pecks", "stomp", "gales", "tempt", "capes", "mesas", "omits", "tepee", "harry", "wring", "evoke",
                 "limes", "cluck", "lunge", "highs", "canes", "giddy", "lithe", "verge", "khaki", "queue", "loath", "foyer",
                 "outdo", "fared", "deter", "crumb", "astir", "spire", "jumpy", "extol", "buoys", "stubs", "lucid", "thong",
-                "afore", "whiff", "maxim", "hulls", "clogs", "slats", "jiffy", "arbor", "cinch", "igloo", "goody", "gazes",
+                "whiff", "maxim", "hulls", "clogs", "slats", "jiffy", "arbor", "cinch", "igloo", "goody", "gazes",
                 "dowel", "calms", "bitch", "scowl", "gulps", "coded", "waver", "mason", "lobes", "ebony", "flail", "isles",
                 "clods", "dazed", "adept", "oozed", "sedan", "clays", "warts", "ketch", "skunk", "manes", "adore", "sneer",
-                "mango", "fiord", "flora", "roomy", "minks", "thaws", "watts", "freer", "exult", "plush", "paled", "twain",
+                "mango", "flora", "roomy", "minks", "thaws", "watts", "freer", "exult", "plush", "paled", "twain",
                 "clink", "scamp", "pawed", "grope", "bravo", "gable", "stink", "sever", "waned", "rarer", "regal", "wards",
                 "fawns", "babes", "unify", "amend", "oaken", "glade", "visor", "hefty", "nines", "throb", "pecan", "butts",
                 "pence", "sills", "jails", "flyer", "saber", "nomad", "miter", "beeps", "domed", "gulfs", "curbs", "heath",
@@ -598,11 +704,11 @@ public class MainActivity extends AppCompatActivity {
                 "slams", "knits", "dumpy", "mania", "spits", "firth", "hikes", "trots", "nosed", "clank", "dogma", "bloat",
                 "balsa", "graft", "middy", "stile", "keyed", "finch", "sperm", "chaff", "wiles", "amigo", "copra", "amiss",
                 "eying", "twirl", "lurch", "popes", "chins", "smock", "tines", "guise", "grits", "junks", "shoal", "cache",
-                "tapir", "atoll", "deity", "toils", "spree", "mocks", "scans", "shorn", "revel", "raven", "hoary", "reels",
+                "tapir", "atoll", "deity", "toils", "spree", "mocks", "scans", "revel", "raven", "hoary", "reels",
                 "scuff", "mimic", "weedy", "corny", "truer", "rouge", "ember", "floes", "torso", "wipes", "edict", "sulky",
                 "recur", "groin", "baste", "kinks", "surer", "piggy", "moldy", "franc", "liars", "inept", "gusty", "facet",
                 "jetty", "equip", "leper", "slink", "soars", "cater", "dowry", "sided", "yearn", "decoy", "taboo", "ovals",
-                "heals", "pleas", "beret", "spilt", "gayly", "rover", "endow", "pygmy", "carat", "abbey", "vents", "waken",
+                "heals", "pleas", "beret", "spilt", "rover", "endow", "pygmy", "carat", "abbey", "vents", "waken",
                 "chimp", "fumed", "sodas", "vinyl", "clout", "wades", "mites", "smirk", "bores", "bunny", "surly", "frock",
                 "foray", "purer", "milks", "query", "mired", "blare", "froth", "gruel", "navel", "paler", "puffy", "casks",
                 "grime", "derby", "mamma", "gavel", "teddy", "vomit", "moans", "allot", "defer", "wield", "viper", "louse",
@@ -621,7 +727,7 @@ public class MainActivity extends AppCompatActivity {
                 "halos", "scour", "suing", "cribs", "sagas", "enema", "wordy", "harps", "coupe", "molar", "flops", "weeps",
                 "mints", "ashen", "felts", "askew", "munch", "mewed", "divan", "vices", "jumbo", "blobs", "blots", "spunk",
                 "acrid", "topaz", "cubed", "clans", "flees", "slurs", "gnaws", "welds", "fords", "emits", "agate", "pumas",
-                "mends", "darks", "dukes", "plies", "canny", "hoots", "oozes", "lamed", "fouls", "clefs", "nicks", "mated",
+                "mends", "dukes", "plies", "canny", "hoots", "oozes", "lamed", "fouls", "clefs", "nicks", "mated",
                 "skims", "brunt", "tuber", "tinge", "fates", "ditty", "thins", "frets", "eider", "bayou", "mulch", "fasts",
                 "amass", "damps", "morns", "friar", "palsy", "vista", "croon", "conch", "udder", "tacos", "skits", "mikes",
                 "quits", "preen", "aster", "adder", "elegy", "pulpy", "scows", "baled", "hovel", "lavas", "crave", "optic",
@@ -632,262 +738,214 @@ public class MainActivity extends AppCompatActivity {
                 "irate", "vales", "coped", "hails", "elude", "bulks", "aired", "vying", "stags", "strew", "cocci", "pacts",
                 "scabs", "silos", "dusts", "yodel", "terse", "jaded", "baser", "jibes", "foils", "sways", "forgo", "slays",
                 "preys", "treks", "quell", "peeks", "assay", "lurks", "eject", "boars", "trite", "belch", "gnash", "wanes",
-                "lutes", "whims", "dosed", "chewy", "snipe", "umbra", "teems", "dozes", "kelps", "upped", "brawn", "doped",
+                "lutes", "whims", "dosed", "chewy", "snipe", "umbra", "teems", "dozes", "upped", "brawn", "doped",
                 "shush", "rinds", "slush", "moron", "voile", "woken", "fjord", "sheik", "jests", "kayak", "slews", "toted",
                 "saner", "drape", "patty", "raves", "sulfa", "grist", "skied", "vixen", "civet", "vouch", "tiara", "homey",
                 "moped", "runts", "serge", "kinky", "rills", "corns", "brats", "pries", "amble", "fries", "loons", "tsars",
-                "datum", "musky", "pigmy", "gnome", "ravel", "ovule", "icily", "liken", "lemur", "frays", "silts", "sifts",
+                "datum", "musky", "gnome", "ravel", "ovule", "icily", "liken", "lemur", "frays", "silts", "sifts",
                 "plods", "ramps", "tress", "earls", "dudes", "waive", "karat", "jolts", "peons", "beers", "horny", "pales",
                 "wreak", "lairs", "lynch", "stank", "swoon", "idler", "abort", "blitz", "ensue", "atone", "bingo", "roves",
                 "kilts", "scald", "adios", "cynic", "dulls", "memos", "elfin", "dales", "peels", "peals", "bares", "sinus",
                 "crone", "sable", "hinds", "shirk", "enrol", "wilts", "roams", "duped", "cysts", "mitts", "safes", "spats",
-                "coops", "filet", "knell", "refit", "covey", "punks", "kilns", "fitly", "abate", "talcs", "heeds", "duels",
+                "coops", "filet", "knell", "refit", "covey", "punks", "kilns", "fitly", "abate", "heeds", "duels",
                 "wanly", "ruffs", "gauss", "lapel", "jaunt", "whelp", "cleat", "gauzy", "dirge", "edits", "wormy", "moats",
                 "smear", "prods", "bowel", "frisk", "vests", "bayed", "rasps", "tames", "delve", "embed", "befit", "wafer",
                 "ceded", "novas", "feign", "spews", "larch", "huffs", "doles", "mamas", "hulks", "pried", "brims", "irked",
-                "aspic", "swipe", "mealy", "skimp", "bluer", "slake", "dowdy", "penis", "brays", "pupas", "egret", "flunk",
+                "aspic", "swipe", "mealy", "skimp", "bluer", "slake", "dowdy", "brays", "egret", "flunk",
                 "phlox", "gripe", "peony", "douse", "blurs", "darns", "slunk", "lefts", "chats", "inane", "vials", "stilt",
-                "rinks", "woofs", "wowed", "bongs", "frond", "ingot", "evict", "singe", "shyer", "flied", "slops", "dolts",
-                "drool", "dells", "whelk", "hippy", "feted", "ether", "cocos", "hives", "jibed", "mazes", "trios", "sirup",
+                "rinks", "woofs", "wowed", "bongs", "frond", "ingot", "evict", "singe", "shyer", "slops", "dolts",
+                "drool", "dells", "whelk", "hippy", "feted", "ether", "cocos", "hives", "jibed", "mazes", "trios",
                 "squab", "laths", "leers", "pasta", "rifts", "lopes", "alias", "whirs", "diced", "slags", "lodes", "foxed",
                 "idled", "prows", "plait", "malts", "chafe", "cower", "toyed", "chefs", "keels", "sties", "racer", "etude",
-                "sucks", "sulks", "micas", "czars", "copse", "ailed", "abler", "rabid", "golds", "croup", "snaky", "visas",
-                "palls", "mopes", "boned", "wispy", "raved", "swaps", "junky", "doily", "pawns", "tamer", "poach", "baits",
-                "damns", "gumbo", "daunt", "prank", "hunks", "buxom", "heres", "honks", "stows", "unbar", "idles", "routs",
+                "sucks", "sulks", "czars", "copse", "ailed", "abler", "rabid", "golds", "croup", "snaky", "visas",
+                "palls", "mopes", "boned", "wispy", "raved", "swaps", "doily", "pawns", "tamer", "poach", "baits",
+                "damns", "gumbo", "daunt", "prank", "hunks", "buxom", "honks", "stows", "unbar", "idles", "routs",
                 "sages", "goads", "remit", "copes", "deign", "culls", "girds", "haves", "lucks", "stunk", "dodos", "shams",
-                "snubs", "icons", "usurp", "dooms", "hells", "soled", "comas", "paves", "maths", "perks", "limps", "wombs",
+                "snubs", "icons", "usurp", "dooms", "soled", "comas", "paves", "maths", "perks", "limps", "wombs",
                 "blurb", "daubs", "cokes", "sours", "stuns", "cased", "musts", "coeds", "cowed", "aping", "zoned", "rummy",
                 "fetes", "skulk", "quaff", "rajah", "deans", "reaps", "galas", "tills", "roved", "kudos", "toned", "pared",
-                "scull", "vexes", "punts", "snoop", "bails", "dames", "hazes", "lores", "marts", "voids", "ameba", "rakes",
+                "scull", "vexes", "punts", "snoop", "bails", "dames", "hazes", "marts", "voids", "ameba", "rakes",
                 "adzes", "harms", "rears", "satyr", "swill", "hexes", "colic", "leeks", "hurls", "yowls", "ivies", "plops",
-                "musks", "papaw", "jells", "bused", "cruet", "bided", "filch", "zests", "rooks", "laxly", "rends", "loams",
+                "musks", "papaw", "jells", "bused", "cruet", "filch", "zests", "rooks", "laxly", "rends", "loams",
                 "basks", "sires", "carps", "pokey", "flits", "muses", "bawls", "shuck", "viler", "lisps", "peeps", "sorer",
-                "lolls", "prude", "diked", "floss", "flogs", "scums", "dopes", "bogie", "pinky", "leafs", "tubas", "scads",
-                "lowed", "yeses", "biked", "qualm", "evens", "caned", "gawks", "whits", "wooly", "gluts", "romps", "bests",
+                "lolls", "prude", "diked", "floss", "flogs", "scums", "dopes", "bogie", "pinky", "tubas", "scads",
+                "lowed", "yeses", "biked", "qualm", "evens", "caned", "gawks", "whits", "gluts", "romps", "bests",
                 "dunce", "crony", "joist", "tunas", "boner", "malls", "parch", "avers", "crams", "pares", "dally", "bigot",
-                "kales", "flays", "leach", "gushy", "pooch", "huger", "slyer", "golfs", "mires", "flues", "loafs", "arced",
-                "acnes", "neons", "fiefs", "dints", "dazes", "pouts", "cored", "yules", "lilts", "beefs", "mutts", "fells",
-                "cowls", "spuds", "lames", "jawed", "dupes", "deads", "bylaw", "noons", "nifty", "clued", "vireo", "gapes",
-                "metes", "cuter", "maims", "droll", "cupid", "mauls", "sedge", "papas", "wheys", "eking", "loots", "hilts",
-                "meows", "beaus", "dices", "peppy", "riper", "fogey", "gists", "yogas", "gilts", "skews", "cedes", "zeals",
-                "alums", "okays", "elope", "grump", "wafts", "soots", "blimp", "hefts", "mulls", "hosed", "cress", "doffs",
-                "ruder", "pixie", "waifs", "ousts", "pucks", "biers", "gulch", "suets", "hobos", "lints", "brans", "teals",
+                "flays", "leach", "gushy", "pooch", "huger", "golfs", "mires", "flues", "loafs", "arced",
+                "fiefs", "dints", "dazes", "pouts", "cored", "yules", "lilts", "beefs", "mutts", "fells",
+                "cowls", "spuds", "lames", "jawed", "dupes", "bylaw", "noons", "nifty", "clued", "vireo", "gapes",
+                "metes", "cuter", "maims", "droll", "cupid", "mauls", "sedge", "papas", "eking", "loots", "hilts",
+                "meows", "beaus", "dices", "peppy", "riper", "fogey", "gists", "gilts", "skews", "cedes",
+                "alums", "okays", "elope", "grump", "wafts", "blimp", "hefts", "mulls", "hosed", "cress", "doffs",
+                "ruder", "pixie", "waifs", "ousts", "pucks", "biers", "gulch", "hobos", "lints", "teals",
                 "garbs", "pewee", "helms", "turfs", "quips", "wends", "banes", "napes", "icier", "swats", "bagel", "hexed",
                 "ogres", "goner", "gilds", "pyres", "lards", "bides", "paged", "talon", "flout", "medic", "veals", "putts",
-                "dirks", "dotes", "tippy", "blurt", "piths", "acing", "barer", "whets", "gaits", "wools", "dunks", "heros",
-                "swabs", "dirts", "jutes", "hemps", "surfs", "okapi", "chows", "shoos", "dusks", "parry", "decal", "furls",
+                "dirks", "dotes", "blurt", "piths", "acing", "barer", "whets", "gaits", "wools", "dunks",
+                "swabs", "surfs", "okapi", "chows", "shoos", "parry", "decal", "furls",
                 "cilia", "sears", "novae", "murks", "warps", "slues", "lamer", "saris", "weans", "purrs", "dills", "togas",
-                "newts", "meany", "bunts", "razes", "goons", "wicks", "ruses", "vends", "geode", "drake", "judos", "lofts",
+                "newts", "meany", "bunts", "razes", "goons", "wicks", "ruses", "vends", "geode", "drake", "lofts",
                 "pulps", "lauds", "mucks", "vises", "mocha", "oiled", "roman", "ethyl", "gotta", "fugue", "smack", "gourd",
                 "bumpy", "radix", "fatty", "borax", "cubit", "cacti", "gamma", "focal", "avail", "papal", "golly", "elite",
-                "versa", "billy", "adieu", "annum", "howdy", "rhino", "norms", "bobby", "axiom", "setup", "yolks", "terns",
+                "versa", "billy", "adieu", "howdy", "rhino", "norms", "bobby", "axiom", "setup", "yolks", "terns",
                 "mixer", "genre", "knoll", "abode", "junta", "gorge", "combo", "alpha", "overt", "kinda", "spelt", "prick",
-                "nobly", "ephod", "audio", "modal", "veldt", "warty", "fluke", "bonny", "bream", "rosin", "bolls", "doers",
-                "downs", "beady", "motif", "humph", "fella", "mould", "crepe", "kerns", "aloha", "glyph", "azure", "riser",
-                "blest", "locus", "lumpy", "beryl", "wanna", "brier", "tuner", "rowdy", "mural", "timer", "canst", "krill",
-                "quoth", "lemme", "triad", "tenon", "amply", "deeps", "padre", "leant", "pacer", "octal", "dolly", "trans",
-                "sumac", "foamy", "lolly", "giver", "quipu", "codex", "manna", "unwed", "vodka", "ferny", "salon", "duple",
+                "nobly", "audio", "modal", "veldt", "warty", "fluke", "bonny", "bream", "rosin", "bolls", "doers",
+                "downs", "beady", "motif", "humph", "fella", "mould", "crepe", "aloha", "glyph", "azure", "riser",
+                "locus", "lumpy", "beryl", "wanna", "brier", "tuner", "rowdy", "mural", "timer", "canst", "krill",
+                "quoth", "lemme", "triad", "tenon", "amply", "deeps", "padre", "pacer", "octal", "dolly", "trans",
+                "sumac", "foamy", "lolly", "giver", "codex", "manna", "unwed", "vodka", "ferny", "salon", "duple",
                 "boron", "revue", "crier", "alack", "inter", "dilly", "whist", "cults", "spake", "reset", "loess", "decor",
                 "mover", "verve", "ethic", "gamut", "lingo", "dunno", "align", "sissy", "incur", "reedy", "avant", "piper",
-                "waxer", "calyx", "basil", "coons", "seine", "piney", "lemma", "trams", "winch", "whirr", "saith", "ionic",
+                "calyx", "basil", "coons", "seine", "piney", "lemma", "trams", "winch", "saith", "ionic",
                 "heady", "harem", "tummy", "sally", "shied", "dross", "farad", "saver", "tilde", "jingo", "bower", "serif",
-                "facto", "belle", "inset", "bogus", "caved", "forte", "sooty", "bongo", "toves", "credo", "basal", "yella",
-                "aglow", "glean", "gusto", "hymen", "ethos", "terra", "brash", "scrip", "swash", "aleph", "tinny", "itchy",
-                "wanta", "trice", "jowls", "gongs", "garde", "boric", "twill", "sower", "henry", "awash", "libel", "spurn",
-                "sabre", "rebut", "penal", "obese", "sonny", "quirt", "mebbe", "tacit", "greek", "xenon", "hullo", "pique",
+                "facto", "belle", "inset", "bogus", "caved", "forte", "sooty", "bongo", "credo", "basal",
+                "aglow", "glean", "gusto", "hymen", "ethos", "terra", "brash", "scrip", "swash", "tinny", "itchy",
+                "trice", "jowls", "gongs", "garde", "twill", "sower", "henry", "awash", "libel", "spurn",
+                "sabre", "rebut", "penal", "obese", "sonny", "quirt", "tacit", "greek", "xenon", "hullo", "pique",
                 "roger", "negro", "hadst", "gecko", "beget", "uncut", "aloes", "louis", "quint", "clunk", "raped", "salvo",
-                "diode", "matey", "hertz", "xylem", "kiosk", "apace", "cawed", "peter", "wench", "cohos", "sorta", "gamba",
-                "bytes", "tango", "nutty", "axial", "aleck", "natal", "clomp", "gored", "siree", "bandy", "gunny", "runic",
+                "diode", "matey", "hertz", "xylem", "kiosk", "apace", "cawed", "peter", "wench", "cohos", "sorta",
+                "bytes", "tango", "nutty", "axial", "natal", "clomp", "gored", "bandy", "gunny", "runic",
                 "whizz", "rupee", "fated", "wiper", "bards", "briny", "staid", "hocks", "ochre", "yummy", "gents", "soupy",
                 "roper", "swath", "cameo", "edger", "spate", "gimme", "ebbed", "breve", "theta", "deems", "dykes", "servo",
                 "telly", "tabby", "tares", "blocs", "welch", "ghoul", "vitae", "cumin", "dinky", "bronc", "tabor", "teeny",
-                "comer", "borer", "sired", "privy", "mammy", "deary", "gyros", "sprit", "conga", "quire", "thugs", "furor",
+                "comer", "borer", "sired", "privy", "mammy", "deary", "gyros", "conga", "quire", "thugs", "furor",
                 "bloke", "runes", "bawdy", "cadre", "toxin", "annul", "egged", "anion", "nodes", "picky", "stein", "jello",
-                "audit", "echos", "fagot", "letup", "eyrie", "fount", "caped", "axons", "amuck", "banal", "riled", "petit",
-                "umber", "miler", "fibre", "agave", "bated", "bilge", "vitro", "feint", "pudgy", "mater", "manic", "umped",
+                "audit", "echos", "letup", "eyrie", "fount", "caped", "axons", "amuck", "banal", "riled",
+                "umber", "miler", "fibre", "agave", "bated", "bilge", "feint", "pudgy", "mater", "manic", "umped",
                 "pesky", "strep", "slurp", "pylon", "puree", "caret", "temps", "newel", "yawns", "seedy", "treed", "coups",
-                "rangy", "brads", "mangy", "loner", "circa", "tibia", "afoul", "mommy", "titer", "carne", "kooky", "motes",
-                "amity", "suave", "hippo", "curvy", "samba", "newsy", "anise", "imams", "tulle", "aways", "liven", "hallo",
-                "wales", "opted", "canto", "idyll", "bodes", "curio", "wrack", "hiker", "chive", "yokel", "dotty", "demur",
-                "cusps", "specs", "quads", "laity", "toner", "decry", "writs", "saute", "clack", "aught", "logos", "tipsy",
-                "natty", "ducal", "bidet", "bulgy", "metre", "lusts", "unary", "goeth", "baler", "sited", "shies", "hasps",
-                "brung", "holed", "swank", "looky", "melee", "huffy", "loamy", "pimps", "titan", "binge", "shunt", "femur",
-                "libra", "seder", "honed", "annas", "coypu", "shims", "zowie", "jihad", "savvy", "nadir", "basso", "monic",
-                "maned", "mousy", "omega", "laver", "prima", "picas", "folio", "mecca", "reals", "troth", "testy", "balky",
-                "crimp", "chink", "abets", "splat", "abaci", "vaunt", "cutie", "pasty", "moray", "levis", "ratty", "islet",
-                "joust", "motet", "viral", "nukes", "grads", "comfy", "voila", "woozy", "blued", "whomp", "sward", "metro",
-                "skeet", "chine", "aerie", "bowie", "tubby", "emirs", "coati", "unzip", "slobs", "trike", "funky", "ducat",
-                "dewey", "skoal", "wadis", "oomph", "taker", "minim", "getup", "stoic", "synod", "runty", "flyby", "braze",
-                "inlay", "venue", "louts", "peaty", "orlon", "humpy", "radon", "beaut", "raspy", "unfed", "crick", "nappy",
-                "vizor", "yipes", "rebus", "divot", "kiwis", "vetch", "squib", "sitar", "kiddo", "dyers", "cotta", "matzo",
-                "lager", "zebus", "crass", "dacha", "kneed", "dicta", "fakir", "knurl", "runny", "unpin", "julep", "globs",
-                "nudes", "sushi", "tacky", "stoke", "kaput", "butch", "hulas", "croft", "achoo", "genii", "nodal", "outgo",
-                "spiel", "viols", "fetid", "cagey", "fudgy", "epoxy", "leggy", "hanky", "lapis", "felon", "beefy", "coots",
-                "melba", "caddy", "segue", "betel", "frizz", "drear", "kooks", "turbo", "hoagy", "moult", "helix", "zonal",
-                "arias", "nosey", "paean", "lacey", "banns", "swain", "fryer", "retch", "tenet", "gigas", "whiny", "ogled",
-                "rumen", "begot", "cruse", "abuts", "riven", "balks", "sines", "sigma", "abase", "ennui", "gores", "unset",
-                "augur", "sated", "odium", "latin", "dings", "moire", "scion", "henna", "kraut", "dicks", "lifer", "prigs",
-                "bebop", "gages", "gazer", "fanny", "gibes", "aural", "tempi", "hooch", "rapes", "snuck", "harts", "techs",
-                "emend", "ninny", "guava", "scarp", "liege", "tufty", "sepia", "tomes", "carob", "emcee", "prams", "poser",
-                "verso", "hubba", "joule", "baize", "blips", "scrim", "cubby", "clave", "winos", "rearm", "liens", "lumen",
-                "chump", "nanny", "trump", "fichu", "chomp", "homos", "purty", "maser", "woosh", "patsy", "shill", "rusks",
-                "avast", "swami", "boded", "ahhhh", "lobed", "natch", "shish", "tansy", "snoot", "payer", "altho", "sappy",
-                "laxer", "hubby", "aegis", "riles", "ditto", "jazzy", "dingo", "quasi", "septa", "peaky", "lorry", "heerd",
-                "bitty", "payee", "seamy", "apses", "imbue", "belie", "chary", "spoof", "phyla", "clime", "babel", "wacky",
-                "sumps", "skids", "khans", "crypt", "inure", "nonce", "outen", "faire", "hooey", "anole", "kazoo", "calve",
-                "limbo", "argot", "ducky", "faker", "vibes", "gassy", "unlit", "nervy", "femme", "biter", "fiche", "boors",
-                "gaffe", "saxes", "recap", "synch", "facie", "dicey", "ouija", "hewer", "legit", "gurus", "edify", "tweak",
-                "caron", "typos", "rerun", "polly", "surds", "hamza", "nulls", "hater", "lefty", "mogul", "mafia", "debug",
-                "pates", "blabs", "splay", "talus", "porno", "moola", "nixed", "kilos", "snide", "horsy", "gesso", "jaggy",
-                "trove", "nixes", "creel", "pater", "iotas", "cadge", "skyed", "hokum", "furze", "ankhs", "curie", "nutsy",
-                "hilum", "remix", "angst", "burls", "jimmy", "veiny", "tryst", "codon", "befog", "gamed", "flume", "axman",
-                "doozy", "lubes", "rheas", "bozos", "butyl", "kelly", "mynah", "jocks", "donut", "avian", "wurst", "chock",
-                "quash", "quals", "hayed", "bombe", "cushy", "spacy", "puked", "leery", "thews", "prink", "amens", "tesla",
-                "intro", "fiver", "frump", "capos", "opine", "coder", "namer", "jowly", "pukes", "haled", "chard", "duffs",
-                "bruin", "reuse", "whang", "toons", "frats", "silty", "telex", "cutup", "nisei", "neato", "decaf", "softy",
-                "bimbo", "adlib", "loony", "shoed", "agues", "peeve", "noway", "gamey", "sarge", "reran", "epact", "potty",
-                "coned", "upend", "narco", "ikats", "whorl", "jinks", "tizzy", "weepy", "posit", "marge", "vegan", "clops",
-                "numbs", "reeks", "rubes", "rower", "biped", "tiffs", "hocus", "hammy", "bunco", "fixit", "tykes", "chaws",
-                "yucky", "hokey", "resew", "maven", "adman", "scuzz", "slogs", "souse", "nacho", "mimed", "melds", "boffo",
-                "debit", "pinup", "vagus", "gulag", "randy", "bosun", "educe", "faxes", "auras", "pesto", "antsy", "betas",
-                "fizzy", "dorky", "snits", "moxie", "thane", "mylar", "nobby", "gamin", "gouty", "esses", "goyim", "paned",
-                "druid", "jades", "rehab", "gofer", "tzars", "octet", "homed", "socko", "dorks", "eared", "anted", "elide",
-                "fazes", "oxbow", "dowse", "situs", "macaw", "scone", "drily", "hyper", "salsa", "mooch", "gated", "unjam",
-                "lipid", "mitre", "venal", "knish", "ritzy", "divas", "torus", "mange", "dimer", "recut", "meson", "wined",
-                "fends", "phage", "fiats", "caulk", "cavil", "panty", "roans", "bilks", "hones", "botch", "estop", "sully",
-                "sooth", "gelds", "ahold", "raper", "pager", "fixer", "infix", "hicks", "tuxes", "plebe", "twits", "abash",
-                "twixt", "wacko", "primp", "nabla", "girts", "miffs", "emote", "xerox", "rebid", "shahs", "rutty", "grout",
-                "grift", "deify", "biddy", "kopek", "semis", "bries", "acmes", "piton", "hussy", "torts", "disco", "whore",
-                "boozy", "gibed", "vamps", "amour", "soppy", "gonzo", "durst", "wader", "tutus", "perms", "catty", "glitz",
-                "brigs", "nerds", "barmy", "gizmo", "owlet", "sayer", "molls", "shard", "whops", "comps", "corer", "colas",
-                "matte", "droid", "ploys", "vapid", "cairn", "deism", "mixup", "yikes", "prosy", "raker", "flubs", "whish",
-                "reify", "craps", "shags", "clone", "hazed", "macho", "recto", "refix", "drams", "biker", "aquas", "porky",
-                "doyen", "exude", "goofs", "divvy", "noels", "jived", "hulky", "cager", "harpy", "oldie", "vivas", "admix",
-                "codas", "zilch", "deist", "orcas", "retro", "pilaf", "parse", "rants", "zingy", "toddy", "chiff", "micro",
-                "veeps", "girly", "nexus", "demos", "bibbs", "antes", "lulus", "gnarl", "zippy", "ivied", "epees", "wimps",
-                "tromp", "grail", "yoyos", "poufs", "hales", "roust", "cabal", "rawer", "pampa", "mosey", "kefir", "burgs",
-                "unmet", "cuspy", "boobs", "boons", "hypes", "dynes", "nards", "lanai", "yogis", "sepal", "quark", "toked",
-                "prate", "ayins", "hawed", "swigs", "vitas", "toker", "doper", "bossa", "linty", "foist", "mondo", "stash",
-                "kayos", "twerp", "zesty", "capon", "wimpy", "rewed", "fungo", "tarot", "frosh", "kabob", "pinko", "redid",
-                "mimeo", "heist", "tarps", "lamas", "sutra", "dinar", "whams", "busty", "spays", "mambo", "nabob", "preps",
-                "odour", "cabby", "conks", "sluff", "dados", "houri", "swart", "balms", "gutsy", "faxed", "egads", "pushy",
-                "retry", "agora", "drubs", "daffy", "chits", "mufti", "karma", "lotto", "toffs", "burps", "deuce", "zings",
-                "kappa", "clads", "doggy", "duper", "scams", "ogler", "mimes", "throe", "zetas", "waled", "promo", "blats",
-                "muffs", "oinks", "viand", "coset", "finks", "faddy", "minis", "snafu", "sauna", "usury", "muxes", "craws",
-                "stats", "condo", "coxes", "loopy", "dorms", "ascot", "dippy", "execs", "dopey", "envoi", "umpty", "gismo",
-                "fazed", "strop", "jives", "slims", "batik", "pings", "sonly", "leggo", "pekoe", "prawn", "luaus", "campy",
-                "oodle", "prexy", "proms", "touts", "ogles", "tweet", "toady", "naiad", "hider", "nuked", "fatso", "sluts",
-                "obits", "narcs", "tyros", "delis", "wooer", "hyped", "poset", "byway", "texas", "scrod", "avows", "futon",
-                "torte", "tuple", "carom", "kebab", "tamps", "jilts", "duals", "artsy", "repro", "modem", "toped", "psych",
-                "sicko", "klutz", "tarns", "coxed", "drays", "cloys", "anded", "piker", "aimer", "suras", "limos", "flack",
-                "hapax", "dutch", "mucky", "shire", "klieg", "staph", "layup", "tokes", "axing", "toper", "duvet", "cowry",
-                "profs", "blahs", "addle", "sudsy", "batty", "coifs", "suety", "gabby", "hafta", "pitas", "gouda", "deice",
-                "taupe", "topes", "duchy", "nitro", "carny", "limey", "orals", "hirer", "taxer", "roils", "ruble", "elate",
-                "dolor", "wryer", "snots", "quais", "coked", "gimel", "gorse", "minas", "goest", "agape", "manta", "jings",
-                "iliac", "admen", "offen", "cills", "offal", "lotta", "bolas", "thwap", "alway", "boggy", "donna", "locos",
-                "belay", "gluey", "bitsy", "mimsy", "hilar", "outta", "vroom", "fetal", "raths", "renal", "dyads", "crocs",
-                "vires", "culpa", "kivas", "feist", "teats", "thats", "yawls", "whens", "abaca", "ohhhh", "aphis", "fusty",
-                "eclat", "perdu", "mayst", "exeat", "molly", "supra", "wetly", "plasm", "buffa", "semen", "pukka", "tagua",
-                "paras", "stoat", "secco", "carte", "haute", "molal", "shads", "forma", "ovoid", "pions", "modus", "bueno",
-                "rheum", "scurf", "parer", "ephah", "doest", "sprue", "flams", "molto", "dieth", "choos", "miked", "bronx",
-                "goopy", "bally", "plumy", "moony", "morts", "yourn", "bipod", "spume", "algal", "ambit", "mucho", "spued",
-                "dozer", "harum", "groat", "skint", "laude", "thrum", "pappy", "oncet", "rimed", "gigue", "limed", "plein",
-                "redly", "humpf", "lites", "seest", "grebe", "absit", "thanx", "pshaw", "yawps", "plats", "payed", "areal",
-                "tilth", "youse", "gwine", "thees", "watsa", "lento", "spitz", "yawed", "gipsy", "sprat", "cornu", "amahs",
-                "blowy", "wahoo", "lubra", "mecum", "whooo", "coqui", "sabra", "edema", "mrads", "dicot", "astro", "kited",
-                "ouzel", "didos", "grata", "bonne", "axmen", "klunk", "summa", "laves", "purls", "yawny", "teary", "masse",
-                "largo", "bazar", "pssst", "sylph", "lulab", "toque", "fugit", "plunk", "ortho", "lucre", "cooch", "whipt",
-                "folky", "tyres", "wheee", "corky", "injun", "solon", "didot", "kerfs", "rayed", "wassa", "chile", "begat",
-                "nippy", "litre", "magna", "rebox", "hydro", "milch", "brent", "gyves", "lazed", "feued", "mavis", "inapt",
-                "baulk", "casus", "scrum", "wised", "fossa", "dower", "kyrie", "bhoys", "scuse", "feuar", "ohmic", "juste",
-                "ukase", "beaux", "tusky", "orate", "musta", "lardy", "intra", "quiff", "epsom", "neath", "ocher", "tared",
-                "homme", "mezzo", "corms", "psoas", "beaky", "terry", "infra", "spivs", "tuans", "belli", "bergs", "anima",
-                "weirs", "mahua", "scops", "manse", "titre", "curia", "kebob", "cycad", "talky", "fucks", "tapis", "amide",
-                "dolce", "sloes", "jakes", "russe", "blash", "tutti", "pruta", "panga", "blebs", "tench", "swarf", "herem",
-                "missy", "merse", "pawky", "limen", "vivre", "chert", "unsee", "tiros", "brack", "foots", "welsh", "fosse",
-                "knops", "ileum", "noire", "firma", "podgy", "laird", "thunk", "shute", "rowan", "shoji", "poesy", "uncap",
-                "fames", "glees", "costa", "turps", "fores", "solum", "imago", "byres", "fondu", "coney", "polis", "dictu",
-                "kraal", "sherd", "mumbo", "wroth", "chars", "unbox", "vacuo", "slued", "weest", "hades", "wiled", "syncs",
-                "muser", "excon", "hoars", "sibyl", "passe", "joeys", "lotsa", "lepta", "shays", "bocks", "endue", "darer",
-                "nones", "ileus", "plash", "busby", "wheal", "buffo", "yobbo", "biles", "poxes", "rooty", "licit", "terce",
-                "bromo", "hayey", "dweeb", "imbed", "saran", "bruit", "punky", "softs", "biffs", "loppy", "agars", "aquae",
-                "livre", "biome", "bunds", "shews", "diems", "ginny", "degum", "polos", "desex", "unman", "dungy", "vitam",
-                "wedgy", "glebe", "apers", "ridgy", "roids", "wifey", "vapes", "whoas", "bunko", "yolky", "ulnas", "reeky",
-                "bodge", "brant", "davit", "deque", "liker", "jenny", "tacts", "fulls", "treap", "ligne", "acked", "refry",
-                "vower", "aargh", "churl", "momma", "gaols", "whump", "arras", "marls", "tiler", "grogs", "memes", "midis",
-                "tided", "haler", "duces", "twiny", "poste", "unrig", "prise", "drabs", "quids", "facer", "spier", "baric",
-                "geoid", "remap", "trier", "gunks", "steno", "stoma", "airer", "ovate", "torah", "apian", "smuts", "pocks",
-                "yurts", "exurb", "defog", "nuder", "bosky", "nimbi", "mothy", "joyed", "labia", "pards", "jammy", "bigly",
-                "faxer", "hoppy", "nurbs", "cotes", "dishy", "vised", "celeb", "pismo", "casas", "withs", "dodgy", "scudi",
-                "mungs", "muons", "ureas", "ioctl", "unhip", "krone", "sager", "verst", "expat", "gronk", "uvula", "shawm",
-                "bilgy", "braes", "cento", "webby", "lippy", "gamic", "lordy", "mazed", "tings", "shoat", "faery", "wirer",
-                "diazo", "carer", "rater", "greps", "rente", "zloty", "viers", "unapt", "poops", "fecal", "kepis", "taxon",
-                "eyers", "wonts", "spina", "stoae", "yenta", "pooey", "buret", "japan", "bedew", "hafts", "selfs", "oared",
-                "herby", "pryer", "oakum", "dinks", "titty", "sepoy", "penes", "fusee", "winey", "gimps", "nihil", "rille",
-                "giber", "ousel", "umiak", "cuppy", "hames", "shits", "azine", "glads", "tacet", "bumph", "coyer", "honky",
-                "gamer", "gooky", "waspy", "sedgy", "bents", "varia", "djinn", "junco", "pubic", "wilco", "lazes", "idyls",
-                "lupus", "rives", "snood", "schmo", "spazz", "finis", "noter", "pavan", "orbed", "bates", "pipet", "baddy",
-                "goers", "shako", "stets", "sebum", "seeth", "lobar", "raver", "ajuga", "riced", "velds", "dribs", "ville",
-                "dhows", "unsew", "halma", "krona", "limby", "jiffs", "treys", "bauds", "pffft", "mimer", "plebs", "caner",
-                "jiber", "cuppa", "washy", "chuff", "unarm", "yukky", "styes", "waker", "flaks", "maces", "rimes", "gimpy",
-                "guano", "liras", "kapok", "scuds", "bwana", "oring", "aider", "prier", "klugy", "monte", "golem", "velar",
-                "firer", "pieta", "umbel", "campo", "unpeg", "fovea", "abeam", "boson", "asker", "goths", "vocab", "vined",
-                "trows", "tikis", "loper", "indie", "boffs", "spang", "grapy", "tater", "ichor", "kilty", "lochs", "supes",
-                "degas", "flics", "torsi", "beths", "weber", "resaw", "lawny", "coven", "mujik", "relet", "therm", "heigh",
-                "shnor", "trued", "zayin", "liest", "barfs", "bassi", "qophs", "roily", "flabs", "punny", "okras", "hanks",
-                "dipso", "nerfs", "fauns", "calla", "pseud", "lurer", "magus", "obeah", "atria", "twink", "palmy", "pocky",
-                "pends", "recta", "plonk", "slaws", "keens", "nicad", "pones", "inker", "whews", "groks", "mosts", "trews",
-                "ulnar", "gyppy", "cocas", "expos", "eruct", "oiler", "vacua", "dreck", "dater", "arums", "tubal", "voxel",
-                "dixit", "beery", "assai", "lades", "actin", "ghoti", "buzzy", "meads", "grody", "ribby", "clews", "creme",
-                "email", "pyxie", "kulak", "bocci", "rived", "duddy", "hoper", "lapin", "wonks", "petri", "phial", "fugal",
-                "holon", "boomy", "duomo", "musos", "shier", "hayer", "porgy", "hived", "litho", "fisty", "stagy", "luvya",
-                "maria", "smogs", "asana", "yogic", "slomo", "fawny", "amine", "wefts", "gonad", "twirp", "brava", "plyer",
-                "fermi", "loges", "niter", "revet", "unate", "gyved", "totty", "zappy", "honer", "giros", "dicer", "calks",
-                "luxes", "monad", "cruft", "quoin", "fumer", "amped", "shlep", "vinca", "yahoo", "vulva", "zooey", "dryad",
-                "nixie", "moper", "iambs", "lunes", "nudie", "limns", "weals", "nohow", "miaow", "gouts", "mynas", "mazer",
-                "kikes", "oxeye", "stoup", "jujus", "debar", "pubes", "taels", "defun", "rands", "blear", "paver", "goosy",
-                "sprog", "oleos", "toffy", "pawer", "maced", "crits", "kluge", "tubed", "sahib", "ganef", "scats", "sputa",
-                "vaned", "acned", "taxol", "plink", "oweth", "tribs", "resay", "boule", "thous", "haply", "glans", "maxis",
-                "bezel", "antis", "porks", "quoit", "alkyd", "glary", "beamy", "hexad", "bonks", "tecum", "kerbs", "filar",
-                "frier", "redux", "abuzz", "fader", "shoer", "couth", "trues", "guyed", "goony", "booky", "fuzes", "hurly",
-                "genet", "hodad", "calix", "filer", "pawls", "iodic", "utero", "henge", "unsay", "liers", "piing", "weald",
-                "sexed", "folic", "poxed", "cunts", "anile", "kiths", "becks", "tatty", "plena", "rebar", "abled", "toyer",
-                "attar", "teaks", "aioli", "awing", "anent", "feces", "redip", "wists", "prats", "mesne", "muter", "smurf",
-                "owest", "bahts", "lossy", "ftped", "hunky", "hoers", "slier", "sicks", "fatly", "delft", "hiver", "himbo",
-                "pengo", "busks", "loxes", "zonks", "ilium", "aport", "ikons", "mulct", "reeve", "civvy", "canna", "barfy",
-                "kaiak", "scudo", "knout", "gaper", "bhang", "pease", "uteri", "lases", "paten", "rasae", "axels", "stoas",
-                "ombre", "styli", "gunky", "hazer", "kenaf", "ahoys", "ammos", "weeny", "urger", "kudzu", "paren", "bolos",
-                "fetor", "nitty", "techy", "lieth", "somas", "darky", "villi", "gluon", "janes", "cants", "farts", "socle",
-                "jinns", "ruing", "slily", "ricer", "hadda", "wowee", "rices", "nerts", "cauls", "swive", "lilty", "micks",
-                "arity", "pasha", "finif", "oinky", "gutty", "tetra", "wises", "wolds", "balds", "picot", "whats", "shiki",
-                "bungs", "snarf", "legos", "dungs", "stogy", "berms", "tangs", "vails", "roods", "morel", "sware", "elans",
-                "latus", "gules", "razer", "doxie", "buena", "overs", "gutta", "zincs", "nates", "kirks", "tikes", "donee",
-                "jerry", "mohel", "ceder", "doges", "unmap", "folia", "rawly", "snark", "topoi", "ceils", "immix", "yores",
-                "diest", "bubba", "pomps", "forky", "turdy", "lawzy", "poohs", "worts", "gloms", "beano", "muley", "barky",
-                "tunny", "auric", "funks", "gaffs", "cordy", "curdy", "lisle", "toric", "soyas", "reman", "mungy", "carpy",
-                "apish", "oaten", "gappy", "aurae", "bract", "rooky", "axled", "burry", "sizer", "proem", "turfy", "impro",
-                "mashy", "miens", "nonny", "olios", "grook", "sates", "agley", "corgi", "dashy", "doser", "dildo", "apsos",
-                "xored", "laker", "playa", "selah", "malty", "dulse", "frigs", "demit", "whoso", "rials", "sawer", "spics",
-                "bedim", "snugs", "fanin", "azoic", "icers", "suers", "wizen", "koine", "topos", "shirr", "rifer", "feral",
-                "laded", "lased", "turds", "swede", "easts", "cozen", "unhit", "pally", "aitch", "sedum", "coper", "ruche",
-                "geeks", "swags", "etext", "algin", "offed", "ninja", "holer", "doter", "toter", "besot", "dicut", "macer",
-                "peens", "pewit", "redox", "poler", "yecch", "fluky", "doeth", "twats", "cruds", "bebug", "bider", "stele",
-                "hexer", "wests", "gluer", "pilau", "abaft", "whelm", "lacer", "inode", "tabus", "gator", "cuing", "refly",
-                "luted", "cukes", "bairn", "bight", "arses", "crump", "loggy", "blini", "spoor", "toyon", "harks", "wazoo",
-                "fenny", "naves", "keyer", "tufas", "morph", "rajas", "typal", "spiff", "oxlip", "unban", "mussy", "finny",
-                "rimer", "login", "molas", "cirri", "huzza", "agone", "unsex", "unwon", "peats", "toile", "zombi", "dewed",
-                "nooky", "alkyl", "ixnay", "dovey", "holey", "cuber", "amyls", "podia", "chino", "apnea", "prims", "lycra",
-                "johns", "primo", "fatwa", "egger", "hempy", "snook", "hying", "fuzed", "barms", "crink", "moots", "yerba",
-                "rhumb", "unarc", "direr", "munge", "eland", "nares", "wrier", "noddy", "atilt", "jukes", "ender", "thens",
-                "unfix", "doggo", "zooks", "diddy", "shmoo", "brusk", "prest", "curer", "pasts", "kelpy", "bocce", "kicky",
-                "taros", "lings", "dicky", "nerdy", "abend", "stela", "biggy", "laved", "baldy",
-                "pubis", "gooks", "wonky", "stied", "hypos", "assed", "spumy", "osier", "roble", "rumba", "biffy", "pupal"
+                "rangy", "brads", "mangy", "loner", "circa", "tibia", "afoul", "mommy",
+                "natty", "ducal", "bidet", "bulgy", "metre", "lusts", "unary", "baler", "sited", "shies", "hasps",
+                "titan", "binge", "shunt", "femur",
+                "libra", "seder", "honed", "shims",
+                "maned", "omega", "reals", "testy",
+                "crimp", "splat", "cutie", "pasty", "moray", "levis", "ratty",
+                "joust", "motet", "viral", "nukes", "grads", "comfy", "woozy", "blued", "whomp", "sward", "metro",
+                "skeet", "chine", "aerie", "bowie", "tubby", "emirs", "unzip", "slobs", "trike", "funky", "ducat",
+                "dewey", "skoal", "wadis", "taker",
+                "inlay", "venue", "louts", "peaty", "radon", "beaut", "raspy", "unfed", "crick", "nappy",
+                "kiwis", "squib", "sitar", "kiddo",
+                "lager", "runny", "unpin", "globs",
+                "sushi", "tacky", "stoke", "kaput", "butch", "croft", "outgo",
+                "cagey", "fudgy", "epoxy", "leggy", "felon", "beefy",
+                "caddy", "drear", "turbo", "helix", "zonal",
+                "nosey", "fryer", "retch", "tenet", "whiny",
+                "begot", "balks", "sines", "sigma", "abase", "unset",
+                "sated", "odium", "latin", "dings", "kraut", "dicks",
+                "fanny", "gibes", "aural", "rapes", "techs",
+                "ninny", "liege",
+                "joule",
+                "chump", "nanny", "trump", "chomp", "homos",
+                "avast", "boded", "lobed", "snoot", "payer", "sappy",
+                "aegis", "ditto", "jazzy",
+                "bitty", "imbue", "spoof", "phyla", "wacky",
+                "skids", "crypt", "faire", "kazoo",
+                "limbo", "ducky", "faker", "vibes", "gassy", "unlit", "nervy", "biter",
+                "saxes", "recap", "facie", "dicey", "legit", "gurus", "edify", "tweak",
+                "typos", "rerun", "polly", "nulls", "hater", "lefty", "mafia", "debug",
+                "kilos",
+                "trove", "curie",
+                "remix", "jimmy", "gamed",
+                "bozos", "jocks", "donut", "avian", "chock",
+                "spacy", "puked", "leery", "amens", "tesla",
+                "intro", "fiver", "coder", "pukes", "haled", "chard",
+                "bruin", "reuse", "toons", "frats", "silty", "decaf", "softy",
+                "bimbo", "loony", "sarge",
+                "coned", "upend", "vegan",
+                "reeks",
+                "yucky", "hokey", "resew", "nacho", "mimed", "melds",
+                "debit", "gulag", "betas",
+                "fizzy", "dorky",
+                "jades", "rehab", "octet", "homed", "dorks", "eared",
+                "macaw", "scone", "hyper", "salsa", "mooch", "gated", "unjam",
+                "venal", "knish",
+                "fends", "caulk", "hones", "botch", "sully",
+                "sooth", "gelds", "raper", "pager", "fixer", "tuxes",
+                "wacko", "emote", "xerox", "rebid", "grout",
+                "semis", "acmes", "disco", "whore",
+                "tutus",
+                "nerds", "gizmo", "owlet", "shard",
+                "matte", "droid", "yikes",
+                "craps", "shags", "clone", "hazed", "macho", "biker", "aquas", "porky",
+                "goofs", "divvy", "noels", "jived", "oldie",
+                "codas", "zilch", "orcas", "retro", "parse", "rants", "micro",
+                "girly", "nexus", "zippy", "wimps",
+                "grail", "hales", "roust",
+                "hypes", "quark",
+                "doper", "linty", "stash",
+                "zesty", "wimpy", "kabob",
+                "heist", "tarps", "lamas", "busty", "preps",
+                "cabby", "gutsy", "faxed", "pushy",
+                "retry", "karma", "burps", "deuce",
+                "doggy", "scams", "mimes", "promo",
+                "muffs", "oinks", "minis", "sauna", 
+                "stats", "condo", "loopy", "dorms", "ascot", "dopey",
+                "proms", "tweet", "toady", "hider", "nuked", "fatso",
+                "narcs", "delis", "hyped", "futon",
+                "carom", "kebab", "jilts", "duals", "artsy", "modem", "psych",
+                "sicko", "klutz", "piker", "aimer", "limos", "flack",
+                "dutch", "mucky", "shire", "layup", "axing",
+                "sudsy", "batty", "pitas", "gouda",
+                "nitro", "carny", "limey", "orals", "hirer", "taxer", "elate",
+                "snots", "manta",
+                "lotta", "boggy", "locos",
+                "gluey", "vroom", "fetal", "renal", "crocs",
+                "wetly", "semen",
+                "miked",
+                "bally", "plumy", "yourn", "bipod", "ambit",
+                "dozer", "groat",
+                "lites", "plats", "payed", "areal",
+                "thees", "spitz", "gipsy", "sprat",
+                "blowy", "wahoo", "astro", "kited",
+                "teary",
+                "bazar", "fugit", "plunk", "lucre",
+                "corky", "rayed", "begat",
+                "nippy", "magna", "hydro", "milch", "lazed", "inapt",
+                "baulk",
+                "beaux", "orate", "intra", "epsom",
+                "mezzo", "anima",
+                "cycad", "talky", "fucks", "amide",
+                "tutti", "tench",
+                "missy", "unsee", "tiros", "welsh", "fosse",
+                "firma", "laird", "thunk", "uncap",
+                "fondu", "coney", "polis",
+                "wroth", "chars", "unbox", "syncs",
+                "joeys", "bocks", "endue", "darer",
+                "nones", "biles", "licit",
+                "dweeb",
+                "biome", "ginny", "polos", "unman",
+                "wedgy", "ridgy", "wifey", "vapes", "whoas", "yolky", "ulnas", "reeky",
+                "liker", "fulls", "refry",
+                "churl", "tiler", "memes",
+                "haler",
+                "geoid", "ovate", "torah",
+                "yurts", "defog", "nimbi", "mothy", "joyed",
+                "faxer", "hoppy", "celeb",
+                "ureas", "uvula",
+                "webby", "lippy",
+                "carer", "rater", "poops", "fecal",
+                "oared",
+                "herby", "titty", "sepoy", "fusee",
+                "shits", "honky", "tacet",
+                "gamer", "waspy", "pubic",
+                "riced",
+                "dhows",
+                "washy", "unarm", "styes", "waker",
+                "guano", "scuds", "aider", "golem",
+                "goths", "vocab", "vined",
+                "tikis", "indie", "tater",
+                "barfs", "flabs", "punny",
+                "fauns", "pseud", "lurer", "palmy", "pocky",
+                "pends", "recta", "keens",
+                "ulnar", "expos", "oiler",
+                "buzzy", "clews", "creme",
+                "email", "kulak", "fugal",
+                "smogs", "amine", "gonad",
+                "zappy", "calks",
+                "monad", "cruft",
+                "nohow", "podgy",
+                "pubes", "paver", "maced", "tubed", "bezel", "porks", "fader", "liers", "smurf", "farts",
+                "dildo", "redox", "nerdy"
         ));
 
         return list;
     }
 }
-
-
-
-
