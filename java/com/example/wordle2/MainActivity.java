@@ -2,9 +2,11 @@ package com.example.wordle2;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.StrictMode;
+
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -52,19 +54,27 @@ public class MainActivity extends AppCompatActivity {
     TextView outDisplay;
     TextView winDisplay;
 
+    String userName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        reset = findViewById(R.id.resetButton);
+        reset = findViewById(R.id.resetbut);
         reset.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
                 finish();
+                switchActivities3();
             }
-        });
+       });
+
+        //  Retrieve the userName from the login screen
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            userName = extras.getString("userName");
+        }
+
         reset.setVisibility(View.INVISIBLE);
         String name;
         int resID;
@@ -94,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
                 resID = getResources().getIdentifier(name, "id", getPackageName());
                 guessedLetters[i][j] = findViewById(resID);
             }
+
         }
 
         String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -131,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
             String test = verbs.get(q).toUpperCase(Locale.ROOT);
             verbs.set(q, test);
         }
+
 
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
@@ -200,12 +212,12 @@ public class MainActivity extends AppCompatActivity {
         //  Has the user entered a valid word? If not, clear it and get out
         if (!verbs.contains(userWord)) {
             outDisplay.setText("The word you entered is invalid.");
-            for (int l = 0; l < 4; l++) {
-                guessedLetters[currentRow][currentCol].setText("");
-                currentCol -= 1;
-            }
+            //for (int l = 0; l < 4; l++) {
+                //guessedLetters[currentRow][currentCol].setText("");
+                //currentCol -= 1;
+            //}
 
-            guessedLetters[currentRow][0].setText("");
+            //guessedLetters[currentRow][0].setText("");
             return;
         }
 
@@ -225,7 +237,7 @@ public class MainActivity extends AppCompatActivity {
             int time = Integer.parseInt(String.valueOf(totalTime));
             timer.setText(millisecondsToTime(totalTime));
 
-            postResults("chrfield", time, currentRow, "solved" );
+            postResults(userName, time, currentRow+1, "solved" );
             return;
         }
 
@@ -280,6 +292,8 @@ public class MainActivity extends AppCompatActivity {
             System.out.println(word);
             outDisplay.setText("Dumbass, the word was " + word);
             timer.setText("You suck");
+            reset.setVisibility(View.VISIBLE);
+            postResults(userName, 0, currentRow+1, "unsolved" );
         }
     }
 
@@ -332,6 +346,8 @@ public class MainActivity extends AppCompatActivity {
         }
         System.out.println(word);
         System.out.println(letters);
+
+
     }
 
     /*
@@ -366,7 +382,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    /*
+        /*
      *   This method will push the results of the game to the Kordle Server to be stored.
      */
     public void postResults(String user, int timeMillis, int numTries, String outcome) {
@@ -403,6 +419,8 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
+
 
     ArrayList<String> getWordBank() {
         ArrayList<String> list = new ArrayList<>(Arrays.asList(
@@ -947,5 +965,10 @@ public class MainActivity extends AppCompatActivity {
         ));
 
         return list;
+    }
+    private void switchActivities3(){
+        System.out.println("switchActivities3");
+        Intent switchActivityIntent=new Intent(this,Leaderboard.class);
+        startActivity(switchActivityIntent);
     }
 }
