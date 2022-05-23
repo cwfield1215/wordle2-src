@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
                 finish();
                 switchActivities3();
             }
-       });
+        });
 
         //  Retrieve the userName from the login screen
         Bundle extras = getIntent().getExtras();
@@ -176,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void delete(View view) {
 
+        outDisplay.setText("");
         curLetter = guessedLetters[currentRow][currentCol].getText().toString();
         if (curLetter.equalsIgnoreCase("")) {
             if (currentCol > 0) {
@@ -213,8 +215,8 @@ public class MainActivity extends AppCompatActivity {
         if (!verbs.contains(userWord)) {
             outDisplay.setText("The word you entered is invalid.");
             //for (int l = 0; l < 4; l++) {
-                //guessedLetters[currentRow][currentCol].setText("");
-                //currentCol -= 1;
+            //guessedLetters[currentRow][currentCol].setText("");
+            //currentCol -= 1;
             //}
 
             //guessedLetters[currentRow][0].setText("");
@@ -223,12 +225,15 @@ public class MainActivity extends AppCompatActivity {
 
         // Has the user guessed the word correctly?
         if (userWord.equals(word)) {
+            Toast toast = Toast.makeText(getApplicationContext(),"Cougalicious", Toast.LENGTH_LONG);
+            toast.show();
             for (int i = 0; i < 5; i++) {
                 greenBoxes[currentRow][i].animate().alpha(1f).rotationXBy(180).setDuration(500);
                 grayBoxes[currentRow][i].animate().alpha(0f);
                 winDisplay.setText(word);
                 outDisplay.setText("");
                 reset.setVisibility(View.VISIBLE);
+
                 //enter2.setText("Reset");
 
             }
@@ -289,6 +294,8 @@ public class MainActivity extends AppCompatActivity {
         //  If the user has used all their guesses and NOT gotten the word,
         //  insult them.
         if (currentRow >= 6 && !userWord.equalsIgnoreCase(word)) {
+            Toast toast = Toast.makeText(getApplicationContext(),"Cou-Kill Yourself", Toast.LENGTH_SHORT);
+            toast.show();
             System.out.println(word);
             outDisplay.setText("Dumbass, the word was " + word);
             timer.setText("You suck");
@@ -382,7 +389,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-        /*
+    /*
      *   This method will push the results of the game to the Kordle Server to be stored.
      */
     public void postResults(String user, int timeMillis, int numTries, String outcome) {
@@ -419,6 +426,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
 
 
 
@@ -817,7 +825,7 @@ public class MainActivity extends AppCompatActivity {
                 "heady", "harem", "tummy", "sally", "shied", "dross", "farad", "saver", "tilde", "jingo", "bower", "serif",
                 "facto", "belle", "inset", "bogus", "caved", "forte", "sooty", "bongo", "credo", "basal",
                 "aglow", "glean", "gusto", "hymen", "ethos", "terra", "brash", "scrip", "swash", "tinny", "itchy",
-                "trice", "jowls", "gongs", "garde", "twill", "sower", "henry", "awash", "libel", "spurn",
+                "trice", "jowls", "gongs", "garde", "twill", "sower", "awash", "libel", "spurn",
                 "sabre", "rebut", "penal", "obese", "sonny", "quirt", "tacit", "greek", "xenon", "hullo", "pique",
                 "roger", "negro", "hadst", "gecko", "beget", "uncut", "aloes", "louis", "quint", "clunk", "raped", "salvo",
                 "diode", "matey", "hertz", "xylem", "kiosk", "apace", "cawed", "peter", "wench", "cohos", "sorta",
@@ -835,38 +843,38 @@ public class MainActivity extends AppCompatActivity {
                 "titan", "binge", "shunt", "femur",
                 "libra", "seder", "honed", "shims",
                 "maned", "omega", "reals", "testy",
-                "crimp", "splat", "cutie", "pasty", "moray", "levis", "ratty",
-                "joust", "motet", "viral", "nukes", "grads", "comfy", "woozy", "blued", "whomp", "sward", "metro",
-                "skeet", "chine", "aerie", "bowie", "tubby", "emirs", "unzip", "slobs", "trike", "funky", "ducat",
+                "crimp", "splat", "cutie", "pasty", "levis", "ratty",
+                "joust", "viral", "nukes", "grads", "comfy", "woozy", "metro",
+                "skeet", "bowie", "tubby", "unzip", "slobs", "funky",
                 "dewey", "skoal", "wadis", "taker",
-                "inlay", "venue", "louts", "peaty", "radon", "beaut", "raspy", "unfed", "crick", "nappy",
-                "kiwis", "squib", "sitar", "kiddo",
+                "inlay", "venue", "peaty", "radon", "beaut", "raspy", "unfed", "crick", "nappy",
+                "kiwis", "kiddo",
                 "lager", "runny", "unpin", "globs",
-                "sushi", "tacky", "stoke", "kaput", "butch", "croft", "outgo",
-                "cagey", "fudgy", "epoxy", "leggy", "felon", "beefy",
+                "sushi", "tacky", "stoke", "butch", "croft", "outgo",
+                "fudgy", "epoxy", "felon", "beefy",
                 "caddy", "drear", "turbo", "helix", "zonal",
-                "nosey", "fryer", "retch", "tenet", "whiny",
+                "nosey", "fryer", "tenet", "whiny",
                 "begot", "balks", "sines", "sigma", "abase", "unset",
-                "sated", "odium", "latin", "dings", "kraut", "dicks",
-                "fanny", "gibes", "aural", "rapes", "techs",
-                "ninny", "liege",
+                "sated", "latin", "dings", "kraut",
+                "fanny", "gibes", "techs",
+                "liege",
                 "joule",
-                "chump", "nanny", "trump", "chomp", "homos",
-                "avast", "boded", "lobed", "snoot", "payer", "sappy",
+                "chump", "nanny", "trump", "chomp",
+                "avast", "lobed", "payer", "sappy",
                 "aegis", "ditto", "jazzy",
                 "bitty", "imbue", "spoof", "phyla", "wacky",
-                "skids", "crypt", "faire", "kazoo",
-                "limbo", "ducky", "faker", "vibes", "gassy", "unlit", "nervy", "biter",
-                "saxes", "recap", "facie", "dicey", "legit", "gurus", "edify", "tweak",
+                "skids", "crypt", "kazoo",
+                "limbo", "ducky", "faker", "vibes", "gassy", "unlit", "biter",
+                "saxes", "recap", "dicey", "legit", "gurus", "edify", "tweak",
                 "typos", "rerun", "polly", "nulls", "hater", "lefty", "mafia", "debug",
                 "kilos",
                 "trove", "curie",
                 "remix", "jimmy", "gamed",
-                "bozos", "jocks", "donut", "avian", "chock",
-                "spacy", "puked", "leery", "amens", "tesla",
+                "bozos", "jocks", "donut", "chock",
+                "spacy", "puked", "leery", "amens",
                 "intro", "fiver", "coder", "pukes", "haled", "chard",
                 "bruin", "reuse", "toons", "frats", "silty", "decaf", "softy",
-                "bimbo", "loony", "sarge",
+                "bimbo", "loony",
                 "coned", "upend", "vegan",
                 "reeks",
                 "yucky", "hokey", "resew", "nacho", "mimed", "melds",
@@ -876,14 +884,14 @@ public class MainActivity extends AppCompatActivity {
                 "macaw", "scone", "hyper", "salsa", "mooch", "gated", "unjam",
                 "venal", "knish",
                 "fends", "caulk", "hones", "botch", "sully",
-                "sooth", "gelds", "raper", "pager", "fixer", "tuxes",
+                "sooth", "pager", "fixer", "tuxes",
                 "wacko", "emote", "xerox", "rebid", "grout",
-                "semis", "acmes", "disco", "whore",
+                "semis", "acmes", "disco",
                 "tutus",
                 "nerds", "gizmo", "owlet", "shard",
                 "matte", "droid", "yikes",
-                "craps", "shags", "clone", "hazed", "macho", "biker", "aquas", "porky",
-                "goofs", "divvy", "noels", "jived", "oldie",
+                "shags", "clone", "hazed", "macho", "biker", "aquas", "porky",
+                "goofs", "divvy", "jived", "oldie",
                 "codas", "zilch", "orcas", "retro", "parse", "rants", "micro",
                 "girly", "nexus", "zippy", "wimps",
                 "grail", "hales", "roust",
@@ -894,43 +902,42 @@ public class MainActivity extends AppCompatActivity {
                 "cabby", "gutsy", "faxed", "pushy",
                 "retry", "karma", "burps", "deuce",
                 "doggy", "scams", "mimes", "promo",
-                "muffs", "oinks", "minis", "sauna", 
+                "muffs", "oinks", "minis", "sauna",
                 "stats", "condo", "loopy", "dorms", "ascot", "dopey",
                 "proms", "tweet", "toady", "hider", "nuked", "fatso",
                 "narcs", "delis", "hyped", "futon",
                 "carom", "kebab", "jilts", "duals", "artsy", "modem", "psych",
-                "sicko", "klutz", "piker", "aimer", "limos", "flack",
+                "sicko", "klutz", "piker", "limos", "flack",
                 "dutch", "mucky", "shire", "layup", "axing",
                 "sudsy", "batty", "pitas", "gouda",
                 "nitro", "carny", "limey", "orals", "hirer", "taxer", "elate",
                 "snots", "manta",
                 "lotta", "boggy", "locos",
                 "gluey", "vroom", "fetal", "renal", "crocs",
-                "wetly", "semen",
+                "wetly",
                 "miked",
                 "bally", "plumy", "yourn", "bipod", "ambit",
                 "dozer", "groat",
                 "lites", "plats", "payed", "areal",
-                "thees", "spitz", "gipsy", "sprat",
+                "spitz", "gipsy", "sprat",
                 "blowy", "wahoo", "astro", "kited",
                 "teary",
                 "bazar", "fugit", "plunk", "lucre",
                 "corky", "rayed", "begat",
                 "nippy", "magna", "hydro", "milch", "lazed", "inapt",
-                "baulk",
                 "beaux", "orate", "intra", "epsom",
-                "mezzo", "anima",
-                "cycad", "talky", "fucks", "amide",
+                "mezzo",
+                "cycad", "talky", "amide",
                 "tutti", "tench",
-                "missy", "unsee", "tiros", "welsh", "fosse",
+                "missy", "unsee", "welsh", "fosse",
                 "firma", "laird", "thunk", "uncap",
                 "fondu", "coney", "polis",
                 "wroth", "chars", "unbox", "syncs",
                 "joeys", "bocks", "endue", "darer",
-                "nones", "biles", "licit",
+                "licit",
                 "dweeb",
                 "biome", "ginny", "polos", "unman",
-                "wedgy", "ridgy", "wifey", "vapes", "whoas", "yolky", "ulnas", "reeky",
+                "wedgy", "ridgy", "wifey", "whoas", "yolky", "ulnas", "reeky",
                 "liker", "fulls", "refry",
                 "churl", "tiler", "memes",
                 "haler",
@@ -941,7 +948,7 @@ public class MainActivity extends AppCompatActivity {
                 "webby", "lippy",
                 "carer", "rater", "poops", "fecal",
                 "oared",
-                "herby", "titty", "sepoy", "fusee",
+                "herby", "sepoy", "fusee",
                 "shits", "honky", "tacet",
                 "gamer", "waspy", "pubic",
                 "riced",
@@ -960,8 +967,8 @@ public class MainActivity extends AppCompatActivity {
                 "zappy", "calks",
                 "monad", "cruft",
                 "nohow", "podgy",
-                "pubes", "paver", "maced", "tubed", "bezel", "porks", "fader", "liers", "smurf", "farts",
-                "dildo", "redox", "nerdy"
+                "pubes", "paver", "maced", "tubed", "bezel", "porks", "fader", "smurf", "farts",
+                "redox", "nerdy"
         ));
 
         return list;

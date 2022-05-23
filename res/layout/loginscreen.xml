@@ -24,6 +24,7 @@
         android:id="@+id/loginButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:backgroundTint="#2F6731"
         android:onClick="onClick"
         android:text="Start"
         app:layout_constraintBottom_toBottomOf="parent"

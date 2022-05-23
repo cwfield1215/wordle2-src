@@ -46,7 +46,7 @@ public class mainScreen extends AppCompatActivity {
                 }
             }
         });
-        tv.setText("Same as regular Wordle"+"\n"+"This is a tournament style competition where"+"\n"+"you are up against someone with the same word and whoever gets the word in fewer tries wins!"+"\n"+"If both players take the same amount of guesses whoever solved it faster wins!"+"\n"+"When you are ready to play press start!");
+        tv.setText("Same as regular wordle" + "\n" + "You will be ranked based on your number of tries and the time it takes you to solve the COUGORDLE"+"\n"+"When you are ready to play press start!");
 
     }
 
@@ -57,5 +57,3 @@ public class mainScreen extends AppCompatActivity {
         startActivity(switchActivityIntent);
     }
 }
-
-

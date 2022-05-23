@@ -14,6 +14,7 @@
         android:textAlignment="center"
         android:textColor="#2F6731"
         android:textSize="24sp"
+        android:textStyle="bold|italic"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.052"
@@ -30,6 +31,7 @@
         android:textAlignment="center"
         android:textColor="#2F6731"
         android:textSize="24sp"
+        android:textStyle="bold|italic"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.905"
@@ -46,6 +48,7 @@
         android:textAlignment="center"
         android:textColor="#2F6731"
         android:textSize="24sp"
+        android:textStyle="bold|italic"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.465"
@@ -55,8 +58,8 @@
 
     <TextView
         android:id="@+id/nameDisplay"
-        android:layout_width="104dp"
-        android:layout_height="621dp"
+        android:layout_width="102dp"
+        android:layout_height="596dp"
         android:textAlignment="viewStart"
         android:textColor="#2F6731"
         android:textSize="16sp"
@@ -65,12 +68,12 @@
         app:layout_constraintHorizontal_bias="0.052"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.854" />
+        app:layout_constraintVertical_bias="1.0" />
 
     <TextView
         android:id="@+id/timeDisplay"
-        android:layout_width="104dp"
-        android:layout_height="621dp"
+        android:layout_width="106dp"
+        android:layout_height="598dp"
         android:textAlignment="viewStart"
         android:textColor="#2F6731"
         android:textSize="16sp"
@@ -79,12 +82,12 @@
         app:layout_constraintHorizontal_bias="0.905"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.854" />
+        app:layout_constraintVertical_bias="1.0" />
 
     <TextView
         android:id="@+id/guessDisplay"
-        android:layout_width="104dp"
-        android:layout_height="621dp"
+        android:layout_width="107dp"
+        android:layout_height="597dp"
         android:textAlignment="viewStart"
         android:textColor="#2F6731"
         android:textSize="16sp"
@@ -93,7 +96,7 @@
         app:layout_constraintHorizontal_bias="0.465"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.854" />
+        app:layout_constraintVertical_bias="1.0" />
 
     <ImageView
         android:id="@+id/line"
@@ -123,6 +126,7 @@
         android:id="@+id/homeButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:backgroundTint="#2F6731"
         android:onClick="reset"
         android:text="Reset"
         app:layout_constraintBottom_toBottomOf="parent"
