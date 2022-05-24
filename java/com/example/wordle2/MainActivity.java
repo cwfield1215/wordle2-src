@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.StrictMode;
 
@@ -294,13 +295,15 @@ public class MainActivity extends AppCompatActivity {
         //  If the user has used all their guesses and NOT gotten the word,
         //  insult them.
         if (currentRow >= 6 && !userWord.equalsIgnoreCase(word)) {
-            Toast toast = Toast.makeText(getApplicationContext(),"Cou-Kill Yourself", Toast.LENGTH_SHORT);
+            Toast toast = Toast.makeText(getApplicationContext(),"Cou-Kill Yourself", Toast.LENGTH_LONG);
             toast.show();
             System.out.println(word);
             outDisplay.setText("Dumbass, the word was " + word);
             timer.setText("You suck");
             reset.setVisibility(View.VISIBLE);
             postResults(userName, 0, currentRow+1, "unsolved" );
+            MediaPlayer music = MediaPlayer.create(MainActivity.this, R.raw.somethingintheway);
+            music.start();
         }
     }
 
