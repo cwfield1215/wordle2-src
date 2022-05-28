@@ -14,8 +14,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Locale;
 
 import java.io.BufferedReader;
@@ -125,8 +127,26 @@ public class MainActivity extends AppCompatActivity {
         timer = findViewById(R.id.timer);
 
         //  Choose a random word from the list of words
+        Date today =  new Date();
+
+        int yyyy =  today.getYear() % 100 + 2000;
+        int mm = today.getMonth() + 1;
+        int dd = today.getDate();
+
+        //int date = 20220529;
+        int date = yyyy * 100 * 100 + mm * 100 + dd;
+        System.out.println("Todays date is: " + date);
+
+        int wordInd=hashCode(verbs.size(),date);
+        System.out.println(wordInd);
+
+        /*
         int wordInd = (int) ((Math.round(Math.random() * verbs.size())));
+
+         */
         word = (verbs.get(wordInd)).toUpperCase();
+
+
 
 
 
@@ -321,6 +341,12 @@ public class MainActivity extends AppCompatActivity {
             secs = "0" + secondsStr;
         }
         return minutes + ": " + secs;
+    }
+    //Generates a number to pick one word based on the date
+    public int hashCode(int size, int date) {
+        int hash = 7;
+        hash = 31 * hash * date + date;
+        return hash % size;
     }
 
     public void reset(View view){
